@@ -11,8 +11,8 @@
     <meta name='twitter:title' content='WebXR Samples'>
     <meta name='twitter:description' content='Sample WebXR pages for testing and reference'>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+    <link rel='icon' type='image/png' sizes='32x32' href='../favicon-32x32.png'>
+    <link rel='icon' type='image/png' sizes='96x96' href='../favicon-96x96.png'>
 
     <link rel='stylesheet' href='../css/stylesheet.css'>
     <link rel='stylesheet' href='../css/pygment_trac.css'>
@@ -73,6 +73,10 @@
       .github-link {
         font-size: 0.8em;
       }
+
+      .wordmark img {
+        width: 70%;
+      }
     </style>
 
     <!--[if lt IE 9]>
@@ -86,11 +90,17 @@
       <header class='header'>
         <div id='nav'>
             <a href='../'>Samples</a>
+            <a href='../layers-samples/'>Layers Samples</a>
             <a href='./' class='selected'>Proposals</a>
             <a href='../tests/'>Test Pages</a>
+            <a href='../report/'>Report</a>
         </div>
 
-        <h1><a href='' class='wordmark'><span>WebXR</span></a></h1>
+        <h1>
+          <a href='' class='wordmark'>
+            <img src='../media/logo/webxr-logo.svg' alt='WebXR Logo'/>
+          </a>
+        </h1>
         <h2 class='tagline'>Proposals</h2>
       </header>
 
@@ -102,13 +112,20 @@
 
         <script>
           let pages = [
-            { title: 'Phone AR', category: 'Phone AR',
-              path: 'phone-ar.html',
-              description: 'Demonstrates basic support for passthrough AR on a mobile device.' },
+            { title: 'AR Depth Sensing - GPU access', category: 'AR',
+              path: 'phone-ar-depth-gpu.html',
+              description: 'Demonstrates use of a depth API in an immersive-ar session. ' +
+                           'The data will be uploaded to the GPU & accessed from a shader to visualize the depth map.' },
 
-            { title: 'AR Hit Test', category: 'Phone AR',
-              path: 'phone-ar-hit-test.html',
-              description: 'Demonstrates using the Hit Test API to place virtual objects on real-world surfaces.' },
+            { title: 'AR Depth Sensing - CPU access', category: 'AR',
+              path: 'phone-ar-depth.html',
+              description: 'Demonstrates use of a depth API in an immersive-ar session. ' +
+                           'The data will be accessed on the CPU.' },
+
+            { title: 'AR Plane Detection', category: 'AR',
+              path: 'plane-detection.html',
+              description: 'Demonstrates use of a plane detection API in an immersive-ar session. ' +
+                           'Implements JavaScript-level hit-test and leverages the Anchors API.' },
           ];
 
           let mainElement = document.getElementById("main");
@@ -124,34 +141,24 @@
 
             let titleLink = document.createElement('a');
             titleLink.href = page.path;
-            titleLink.innerHTML = page.title;
+            titleLink.textContent = page.title;
             title.appendChild(titleLink);
             article.appendChild(title);
 
             let category = document.createElement('h4');
-            category.innerHTML = page.category;
+            category.textContent = page.category;
             article.appendChild(category);
 
             let description = document.createElement('p');
-            description.innerHTML = page.description;
+            description.textContent = page.description;
             article.appendChild(description);
 
             let links = document.createElement('div');
             links.classList.add('links');
 
-            let liveLink = document.createElement('a');
-            liveLink.href = page.path;
-            liveLink.innerHTML = 'Open';
-            links.appendChild(liveLink);
-
-            let polyfillLink = document.createElement('a');
-            polyfillLink.href = page.path + '?allowPolyfill=1';
-            polyfillLink.innerHTML = 'Open with Polyfill';
-            links.appendChild(polyfillLink);
-
             let sourceLink = document.createElement('a');
             sourceLink.href = 'https://github.com/immersive-web/webxr-samples/blob/master/proposals/' + page.path;
-            sourceLink.innerHTML = 'Source';
+            sourceLink.textContent = 'Source';
             links.appendChild(sourceLink);
 
             article.appendChild(links);

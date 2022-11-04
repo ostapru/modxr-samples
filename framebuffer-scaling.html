@@ -25,26 +25,17 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     <meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'>
     <meta name='mobile-web-app-capable' content='yes'>
     <meta name='apple-mobile-web-app-capable' content='yes'>
-
-    <!-- Origin Trial Token, feature = WebXR Device API, origin = https://immersive-web.github.io, expires = 2018-08-28 -->
-<meta http-equiv="origin-trial" data-feature="WebXR Device API" data-expires="2018-08-28" content="AnNpu7ceXvLew05ccD8Zr1OZsdZiB2hLQKK82kTTMDwF7oRKtP3QEJ4RzkeHrmB8Sq0vSV6ZNmszpBCZ0I8p9gAAAABceyJvcmlnaW4iOiJodHRwczovL2ltbWVyc2l2ZS13ZWIuZ2l0aHViLmlvOjQ0MyIsImZlYXR1cmUiOiJXZWJYUkRldmljZSIsImV4cGlyeSI6MTUzNTQxNDQwMH0=">
+    <link rel='icon' type='image/png' sizes='32x32' href='favicon-32x32.png'>
+    <link rel='icon' type='image/png' sizes='96x96' href='favicon-96x96.png'>
+    <link rel='stylesheet' href='css/common.css'>
 
     <title>Framebuffer Scaling</title>
 
-    <link href='css/common.css' rel='stylesheet'></link>
-
-    <!--The polyfill is not needed for browser that have native API support,
-        but is linked by these samples for wider compatibility.-->
-    <script src='js/webxr-polyfill.js'></script>
-
-    <!--This script patches up around implementation differences in past browser versions
-        so that the samples can always be written against the most recent spec changes.
-        It won't be necessary after the API has been officially shipped for a bit.-->
-    <script src='js/webxr-version-shim.js'></script>
-
-    <script src='js/cottontail/build/cottontail.js'></script>
-
-    <script src='js/webxr-button.js'></script>
+    <style>
+      :disabled, .disabled {
+        opacity: 0.6;
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -53,50 +44,67 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         <p>
           This sample demonstrates scaling the framebuffer used for a WebXR layer
           at creation time to control the memory and fillrate required and improve
-          performance or quality as needed. (The system may clamp the actual
-          buffer sizes)
+          performance or quality as needed. The system may clamp the actual
+          buffer sizes.
 
           Framebuffer scaling should be used to make a performance/memory/quality
-          tradeoff for the lifetime of the session. 
+          tradeoff for the lifetime of the session.
           <a class="back" href="./">Back</a>
           <br/>
           <hr/>
           <input id='framebufferScaleSelect' value='1.0' min='0.25' max='2.0' step='0.125' type='range'/><br/>
           <span id='framebufferScaleLabel'></span>
+          <br/>
+          Use Native (1:1) scale: <input id='useNativeScale' type='checkbox'/>
         </p>
       </details>
     </header>
     <main style='text-align: center;'>
-      <p>Click 'Enter XR' to see content</p> 
+      <p>Click 'Enter XR' to see content</p>
     </main>
-    <script>
-      (function () {
-      'use strict';
+    <script type="module">
+      import {WebXRButton} from './js/util/webxr-button.js';
+      import {Scene} from './js/render/scenes/scene.js';
+      import {Renderer, createWebGLContext} from './js/render/core/renderer.js';
+      import {CubeSeaNode} from './js/render/nodes/cube-sea.js';
+      import {Gltf2Node} from './js/render/nodes/gltf2.js';
+      import {QueryArgs} from './js/util/query-args.js';
 
-      // If requested, initialize the WebXR polyfill
-      if (QueryArgs.getBool('allowPolyfill', false)) {
-        var polyfill = new WebXRPolyfill();
+      // If requested, use the polyfill to provide support for mobile devices
+      // and devices which only support WebVR.
+      import WebXRPolyfill from './js/third-party/webxr-polyfill/build/webxr-polyfill.module.js';
+      if (QueryArgs.getBool('usePolyfill', true)) {
+        let polyfill = new WebXRPolyfill();
       }
-      // Apply the version shim after the polyfill is instantiated, to ensure
-      // that the polyfill also gets patched if necessary.
-      var versionShim = new WebXRVersionShim();
 
       let scaleSelect = document.getElementById('framebufferScaleSelect');
       let scaleLabel = document.getElementById('framebufferScaleLabel');
+      let nativeScaleCheckbox = document.getElementById('useNativeScale');
 
-      function updateLabel() {
-        let value = parseFloat(scaleSelect.value);
-        let label = `Framebuffer scale: ${scaleSelect.value}`;
-        switch (value) {
-          case 0.5: label += ' - 50% recommended res'; break;
-          case 1.0: label += ' - Default, system recommendation'; break;
-          case 1.5: label += ' - 150% recommended res'; break;
-          case 2.0: label += ' - 200% recommended res'; break;
+      function updateLabel(label) {
+        let native = nativeScaleCheckbox.checked;
+        scaleSelect.disabled = native;
+        if (native) {
+          scaleLabel.classList.add('disabled');
+        } else {
+          scaleLabel.classList.remove('disabled');
         }
-        scaleLabel.innerHTML = label;
+
+        if (!label) {
+          let value = parseFloat(scaleSelect.value);
+          label = `Framebuffer scale: ${scaleSelect.value}`;
+          switch (value) {
+            case 0.5: label += ' - 50% recommended res'; break;
+            case 1.0: label += ' - Default, system recommendation'; break;
+            case 1.5: label += ' - 150% recommended res'; break;
+            case 2.0: label += ' - 200% recommended res'; break;
+          }
+        }
+        scaleLabel.textContent = label;
       }
 
-      scaleSelect.addEventListener('change', updateLabel);
+      scaleSelect.addEventListener('change', () => { updateLabel(); });
+      nativeScaleCheckbox.addEventListener('change', () => { updateLabel(); });
       updateLabel();
 
       // XR globals.
@@ -110,27 +118,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       scene.addNode(new CubeSeaNode());
 
       function initXR() {
-        xrButton = new XRDeviceButton({
+        xrButton = new WebXRButton({
           onRequestSession: onRequestSession,
           onEndSession: onEndSession
         });
         document.querySelector('header').appendChild(xrButton.domElement);
 
         if (navigator.xr) {
-          navigator.xr.supportsSessionMode('immersive-vr').then(() => {
-            xrButton.enabled = true;
+          navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+            xrButton.enabled = supported;
           });
         }
       }
 
       function onRequestSession() {
-        // Set up a mirror canvas
-        let mirrorCanvas = document.createElement('canvas');
-        let ctx = mirrorCanvas.getContext('xrpresent');
-        mirrorCanvas.setAttribute('id', 'mirror-canvas');
-        document.body.appendChild(mirrorCanvas);
-
-        navigator.xr.requestSession({ mode: 'immersive-vr', outputContext: ctx  }).then(onSessionStarted);
+        return navigator.xr.requestSession('immersive-vr').then(onSessionStarted);
       }
 
       function onSessionStarted(session) {
@@ -149,23 +151,32 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
           renderer = new Renderer(gl);
 
           scene.setRenderer(renderer);
-          scene.inputRenderer.setControllerMesh(new Gltf2Node({url: 'media/gltf/controller/controller.gltf'}));
+          scene.inputRenderer.useProfileControllerMeshes(session);
         }
 
-        // This is the only meaningful change in this sample from xr-presentation.js.
-        // It sets a requested scale to be applied to the framebuffer created
+        // These are the only meaningful change in this sample from xr-presentation.js.
+
+        // If the native scale factor is requested, query it with the session
+        // just prior to creating the layer and override the user-set scale
+        // with it.
+        if (nativeScaleCheckbox.checked) {
+          let nativeScale = XRWebGLLayer.getNativeFramebufferScaleFactor(session);
+          scaleSelect.value = `${nativeScale}`;
+          updateLabel(`Native Scale: ${nativeScale}`);
+        }
+
+        // This sets a requested scale to be applied to the framebuffer created
         // for the layer. The UA is allowed to ignore the request or adjust it
         // as needed. The scale of the framebuffer cannot be changed after the
         // layer is created, though the UA is allowed to resize the framebuffer
         // at any time.
         let scale = parseFloat(scaleSelect.value);
-        session.baseLayer = new XRWebGLLayer(session, gl, {
-          framebufferScaleFactor: scale
+        session.updateRenderState({
+          baseLayer: new XRWebGLLayer(session, gl, { framebufferScaleFactor: scale })
         });
 
-        session.requestReferenceSpace({ type: 'stationary', subtype: 'eye-level' }).then((refSpace) => {
+        session.requestReferenceSpace('local').then((refSpace) => {
           xrRefSpace = refSpace;
-
           session.requestAnimationFrame(onXRFrame);
         });
       }
@@ -175,7 +186,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
       }
 
       function onSessionEnded(event) {
-        document.body.removeChild(document.querySelector('#mirror-canvas'));
         xrButton.setSession(null);
 
         gl = null;
@@ -198,7 +208,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
       // Start the XR application.
       initXR();
-      })();
     </script>
   </body>
 </html>

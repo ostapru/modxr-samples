@@ -11,8 +11,8 @@
     <meta name='twitter:title' content='WebXR Samples'>
     <meta name='twitter:description' content='Sample WebXR pages for testing and reference'>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
+    <link rel='icon' type='image/png' sizes='32x32' href='../favicon-32x32.png'>
+    <link rel='icon' type='image/png' sizes='96x96' href='../favicon-96x96.png'>
 
     <link rel='stylesheet' href='../css/stylesheet.css'>
     <link rel='stylesheet' href='../css/pygment_trac.css'>
@@ -73,6 +73,10 @@
       .github-link {
         font-size: 0.8em;
       }
+
+      .wordmark img {
+        width: 70%;
+      }
     </style>
 
     <!--[if lt IE 9]>
@@ -86,11 +90,17 @@
       <header class='header'>
         <div id='nav'>
             <a href='../'>Samples</a>
+            <a href='../layers-samples/'>Layers Samples</a>
             <a href='../proposals/'>Proposals</a>
             <a href='./' class='selected'>Test Pages</a>
+            <a href='../report/'>Report</a>
         </div>
 
-        <h1><a href='' class='wordmark'><span>WebXR</span></a></h1>
+        <h1>
+          <a href='' class='wordmark'>
+            <img src='../media/logo/webxr-logo.svg' alt='WebXR Logo'/>
+          </a>
+        </h1>
         <h2 class='tagline'>Test Pages</h2>
       </header>
 
@@ -109,9 +119,9 @@
               path: 'pointer-painter.html',
               description: 'Leaves behind a trail of pointers and cursors on select events.' },
 
-            { title: 'Permission Requests', category: 'User Agent Behavior',
+            { title: 'User Agent Prompts', category: 'User Agent Behavior',
               path: 'permission-request.html',
-              description: 'Tests requesting permissions from within XR.' },
+              description: 'Tests various prompts (PWA install, permission requests, notifications) from within XR.' },
 
             { title: 'Offscreen Canvas', category: 'Alternate WebGL Modes',
               path: 'offscreen-canvas.html',
@@ -120,6 +130,26 @@
             { title: 'Sponza', category: 'Lots-o-Polys',
               path: 'sponza.html',
               description: 'Loads a larger scene than other samples for performance testing. (Warning: Can be slow on mobile devices!)' },
+
+            { title: 'Composed Views', category: 'We Like Matrix Math',
+              path: 'composed-views.html',
+              description: 'Tests a scenario where views are composed from a combination of viewer and local-floor space.' },
+
+            { title: 'Reference Space Invert', category: 'We Hate Matrix Math',
+              path: 'ref-space-invert.html',
+              description: 'Tests creating an offset reference space with the viewer pose, which should cancel out the pose and report the viewer at the origin.' },
+
+            { title: 'Interrupted AR', category: 'Exceptions!',
+              path: 'interrupted-ar.html',
+              description: 'Tests what happens when an exception is thrown in promise resolve of an `immersive-ar` session request.' },
+
+            { title: 'Sparse Frames', category: 'M_ss_ng Fr_m_s',
+              path: 'sparse-frames.html',
+              description: 'Tests what happens the framebuffer is not populated every frame.' },
+
+            { title: 'WebGL 2.0 Multisampling', category: 'Artisinally crafted pixels',
+              path: 'webgl2-multisample.html',
+              description: 'Tests that multisample renderbuffers are usable with XRWebGLLayer.' },
           ];
 
           let mainElement = document.getElementById("main");
@@ -135,35 +165,32 @@
 
             let titleLink = document.createElement('a');
             titleLink.href = page.path;
-            titleLink.innerHTML = page.title;
+            titleLink.textContent = page.title;
             title.appendChild(titleLink);
             article.appendChild(title);
 
             let category = document.createElement('h4');
-            category.innerHTML = page.category;
+            category.textContent = page.category;
             article.appendChild(category);
 
             let description = document.createElement('p');
-            description.innerHTML = page.description;
+            description.textContent = page.description;
             article.appendChild(description);
 
             let links = document.createElement('div');
             links.classList.add('links');
 
-            let liveLink = document.createElement('a');
-            liveLink.href = page.path;
-            liveLink.innerHTML = 'Open';
-            links.appendChild(liveLink);
-
-            let polyfillLink = document.createElement('a');
-            polyfillLink.href = page.path + '?allowPolyfill=1';
-            polyfillLink.innerHTML = 'Open with Polyfill';
-            links.appendChild(polyfillLink);
-
             let sourceLink = document.createElement('a');
             sourceLink.href = 'https://github.com/immersive-web/webxr-samples/blob/master/tests/' + page.path;
-            sourceLink.innerHTML = 'Source';
+            sourceLink.textContent = 'Source';
             links.appendChild(sourceLink);
+
+            if (!page.noPolyfill) {
+              let polyfillLink = document.createElement('a');
+              polyfillLink.href = page.path + '?usePolyfill=0';
+              polyfillLink.textContent = 'Run Without Polyfill';
+              links.appendChild(polyfillLink);
+            }
 
             article.appendChild(links);
 
